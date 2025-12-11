@@ -5,7 +5,7 @@
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat&logo=vite)](https://vitejs.dev/)
 [![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-VS_Code-007ACC?style=flat&logo=visual-studio-code)](https://microsoft.github.io/monaco-editor/)
 [![xterm.js](https://img.shields.io/badge/xterm.js-Terminal-000000?style=flat&logo=windowsterminal)](https://xtermjs.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache2.0-green.svg?style=flat)](LICENSE)
 
 **[中文](README.md) | EN**
 
