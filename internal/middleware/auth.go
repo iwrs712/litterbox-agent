@@ -3,38 +3,18 @@ package middleware
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"sync"
-
-	"github.com/google/uuid"
 )
 
+const TokenEnvVar = "AGENT_TOKEN"
+
 type AuthManager struct {
-	token       string
-	initialized bool
-	mu          sync.RWMutex
+	mu sync.RWMutex
 }
 
 func NewAuthManager() *AuthManager {
-	return &AuthManager{
-		token:       "",
-		initialized: false,
-	}
-}
-
-// Initialize 只能成功调用一次
-func (m *AuthManager) Initialize() (string, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if m.initialized {
-		return "", ErrAlreadyInitialized
-	}
-
-	// 生成 token
-	m.token = "tok-" + uuid.New().String()
-	m.initialized = true
-
-	return m.token, nil
+	return &AuthManager{}
 }
 
 // Verify 验证 token
@@ -42,41 +22,28 @@ func (m *AuthManager) Verify(token string) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	if !m.initialized {
-		return false
+	envToken := os.Getenv(TokenEnvVar)
+	if envToken == "" {
+		// 如果环境变量中没有token，则不需要验证，直接返回true
+		return true
 	}
 
-	return m.token == token
+	return envToken == token
 }
 
-// IsInitialized 检查是否已初始化
-func (m *AuthManager) IsInitialized() bool {
+// IsAuthEnabled 检查是否启用了认证
+func (m *AuthManager) IsAuthEnabled() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return m.initialized
-}
-
-var ErrAlreadyInitialized = &InitError{"Token already initialized"}
-
-type InitError struct {
-	Message string
-}
-
-func (e *InitError) Error() string {
-	return e.Message
+	return os.Getenv(TokenEnvVar) != ""
 }
 
 // Protect 保护需要认证的接口
 func (m *AuthManager) Protect(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 检查是否已初始化
-		if !m.IsInitialized() {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{
-				"error": "Token not initialized. Please call /init first.",
-				"code":  "NOT_INITIALIZED",
-			})
+		// 如果未启用认证，直接放行
+		if !m.IsAuthEnabled() {
+			next.ServeHTTP(w, r)
 			return
 		}
 

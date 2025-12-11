@@ -7,135 +7,136 @@
 [![xterm.js](https://img.shields.io/badge/xterm.js-Terminal-000000?style=flat&logo=windowsterminal)](https://xtermjs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
 
-**中文 | [EN](README_EN.md)**
+**[中文](README.md) | EN**
 
-轻量级沙箱工具，提供 Web IDE 界面和 API。在浏览器中编辑代码、执行命令、管理文件，同时为 AI Agent 提供完整的自动化接口。专为远程开发和 AI 协作设计。
+Lightweight sandbox tool with Web IDE and RESTful API. Edit code, execute commands, and manage files in your browser, while providing complete automation interfaces for AI Agents. Designed for remote development and AI collaboration.
 
 ![Litterbox Agent](./docs/imgs/screenshot.png)
-## 快速开始
 
-### 构建
+## Quick Start
+
+### Build
 
 ```bash
-# 构建后端
+# Build backend
 go build -o litterbox-agent cmd/server/main.go
 
-# 构建前端
+# Build frontend
 cd front && npm install && npm run build
 ```
 
-### 运行
+### Run
 
 ```bash
-# 无认证模式
+# Without authentication
 ./litterbox-agent
 
-# Token 认证模式
+# With token authentication
 export AGENT_TOKEN="your-secure-token"
 ./litterbox-agent
 ```
 
-### 访问
+### Access
 
-浏览器访问：`http://localhost:22531`
+Browser: `http://localhost:22531`
 
-支持 URL 参数：
+URL parameters supported:
 ```
 http://localhost:22531?dir=/path/to/directory
 http://localhost:22531?dir=/home&file=/home/config.json
 http://localhost:22531?token=xxxxxx&dir=/home&file=/home/config.json
 ```
 
-## 环境变量
+## Environment Variables
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `PORT` | 服务器端口 | `22531` |
-| `AGENT_TOKEN` | 访问 Token（不设置则无需认证） | 无 |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `22531` |
+| `AGENT_TOKEN` | Access token (no auth if not set) | None |
 
-## API 接口
+## API Reference
 
-> 如果启用了Token，则需要在请求头中携带 `X-Token`
+> Include `X-Token` in request headers if authentication is enabled
 
-### 文件操作
+### File Operations
 
 ```bash
-# 获取文件树
+# Get file tree
 GET /api/tree?path=/path/to/directory
 
-# 读取文件
+# Read file
 GET /api/files?path=/path/to/file
 
-# 创建文件/目录
+# Create file/directory
 POST /api/files
 {"path": "/path/to/file", "is_dir": false}
 
-# 保存文件
+# Save file
 PUT /api/files
 {"path": "/path/to/file", "content": "file content"}
 
-# 删除文件/目录
+# Delete file/directory
 DELETE /api/files
 {"path": "/path/to/file"}
 
-# 上传文件
+# Upload file
 POST /api/upload
 Content-Type: multipart/form-data
 
-# 下载文件
+# Download file
 GET /api/download?path=/path/to/file
 ```
 
-### 命令执行
+### Command Execution
 
 ```bash
 POST /api/exec
 {"command": "ls -la", "cwd": "/optional/working/directory"}
 ```
 
-### Agent文件操作
+### Agent File Operations
 
-Agent 专用的文件操作接口，支持精确的文件编辑和历史回退。
+file operations for AI Agents, supporting precise editing and history rollback.
 
-#### 1. 查看文件内容 (view)
+#### 1. View File Content (view)
 
 ```bash
-# 查看整个文件
+# View entire file
 POST /api/agent/file
 {"command": "view", "path": "/path/to/file"}
 
-# 查看指定行范围（例如 1-10 行）
+# View specific line range (e.g., lines 1-10)
 POST /api/agent/file
 {"command": "view", "path": "/path/to/file", "view_range": [1, 10]}
 ```
 
-#### 2. 创建文件 (create)
+#### 2. Create File (create)
 
 ```bash
 POST /api/agent/file
 {"command": "create", "path": "/path/to/file", "file_text": "file content"}
 ```
 
-#### 3. 字符串替换 (str_replace)
+#### 3. String Replace (str_replace)
 
 ```bash
-# 替换文件中的所有匹配项
+# Replace all occurrences in file
 POST /api/agent/file
 {"command": "str_replace", "path": "/path/to/file", "old_str": "old text", "new_str": "new text"}
 ```
 
-#### 4. 插入行 (insert)
+#### 4. Insert Line (insert)
 
 ```bash
-# 在第 5 行之后插入内容
+# Insert content after line 5
 POST /api/agent/file
 {"command": "insert", "path": "/path/to/file", "insert_line": 5, "new_str": "new line content"}
 ```
 
-#### 5. 撤销编辑 (undo_edit)
+#### 5. Undo Edit (undo_edit)
 
 ```bash
-# 撤销上一次的编辑操作（每个文件最多保留 10 次历史）
+# Undo last edit operation (up to 10 history records per file)
 POST /api/agent/file
 {"command": "undo_edit", "path": "/path/to/file"}
 ```

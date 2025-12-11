@@ -3,6 +3,7 @@ package model
 // CommandRequest represents a command execution request
 type CommandRequest struct {
 	Command string `json:"command"`
+	Cwd     string `json:"cwd,omitempty"` // 工作目录，可选
 }
 
 // CommandResponse represents a command execution response
@@ -48,4 +49,69 @@ type FileOperationResponse struct {
 // ErrorResponse represents an error response
 type ErrorResponse struct {
 	Error string `json:"error"`
+}
+
+// FileTreeNode represents a node in the file tree
+type FileTreeNode struct {
+	Name     string          `json:"name"`
+	Path     string          `json:"path"`
+	IsDir    bool            `json:"is_dir"`
+	Size     int64           `json:"size,omitempty"`
+	Children []*FileTreeNode `json:"children,omitempty"`
+}
+
+// FileContentRequest represents a request to read file content
+type FileContentRequest struct {
+	Path string `json:"path"`
+}
+
+// FileContentResponse represents a file content response
+type FileContentResponse struct {
+	Content  string `json:"content"`
+	Path     string `json:"path"`
+	Language string `json:"language,omitempty"` // 文件语言类型，用于编辑器高亮
+	Size     int64  `json:"size,omitempty"`     // 文件大小（字节）
+	ModTime  string `json:"mod_time,omitempty"` // 修改时间
+}
+
+// FileSaveRequest represents a request to save file content
+type FileSaveRequest struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+}
+
+// FileSaveResponse represents a file save response
+type FileSaveResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+}
+
+// FileInfoRequest represents a request to get file metadata
+type FileInfoRequest struct {
+	Path string `json:"path"`
+}
+
+// FileInfoResponse represents file metadata response
+type FileInfoResponse struct {
+	Path     string `json:"path"`
+	Size     int64  `json:"size"`
+	ModTime  string `json:"mod_time"`
+	Language string `json:"language,omitempty"`
+}
+
+// FileCreateRequest represents a request to create a file or directory
+type FileCreateRequest struct {
+	Path  string `json:"path"`
+	IsDir bool   `json:"is_dir"`
+}
+
+// FileDeleteRequest represents a request to delete a file or directory
+type FileDeleteRequest struct {
+	Path string `json:"path"`
+}
+
+// FileOperationResult represents a generic file operation result
+type FileOperationResult struct {
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
 }

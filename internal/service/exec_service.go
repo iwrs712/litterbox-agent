@@ -15,8 +15,13 @@ func NewExecService() *ExecService {
 }
 
 // ExecuteCommand executes a shell command and returns the result
-func (s *ExecService) ExecuteCommand(command string) *model.CommandResponse {
-	cmd := exec.Command("sh", "-c", command)
+func (s *ExecService) ExecuteCommand(req *model.CommandRequest) *model.CommandResponse {
+	cmd := exec.Command("sh", "-c", req.Command)
+
+	// 设置工作目录
+	if req.Cwd != "" {
+		cmd.Dir = req.Cwd
+	}
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

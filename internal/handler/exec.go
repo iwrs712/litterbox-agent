@@ -40,7 +40,7 @@ func (h *ExecHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := h.execService.ExecuteCommand(req.Command)
+	response := h.execService.ExecuteCommand(&req)
 	h.metricsService.IncrementCommand()
 
 	utils.WriteSuccess(w, response)
