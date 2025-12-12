@@ -1,123 +1,97 @@
 package utils
 
 import (
-	"bufio"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/process"
 	"os"
-	"runtime"
-	"strconv"
-	"strings"
-	"syscall"
 	"time"
 )
 
 var (
-	lastCPUTime   int64
-	lastSysTime   int64
+	lastCPUTimes  []cpu.TimesStat
 	lastCheckTime time.Time
+	pid           int32
 )
 
-// GetCPUPercent returns the CPU usage percentage
-func GetCPUPercent() float64 {
-	now := time.Now()
+func init() {
+	pid = int32(os.Getpid())
+}
 
-	// 首次调用，初始化
-	if lastCheckTime.IsZero() {
-		lastCheckTime = now
-		var rusage syscall.Rusage
-		syscall.Getrusage(syscall.RUSAGE_SELF, &rusage)
-		lastCPUTime = rusage.Utime.Nano() + rusage.Stime.Nano()
-		lastSysTime = now.UnixNano()
+// GetCPUPercent returns the CPU usage percentage of current process
+func GetCPUPercent() float64 {
+	proc, err := process.NewProcess(pid)
+	if err != nil {
 		return 0.0
 	}
 
-	var rusage syscall.Rusage
-	syscall.Getrusage(syscall.RUSAGE_SELF, &rusage)
+	percent, err := proc.CPUPercent()
+	if err != nil {
+		return 0.0
+	}
 
-	currentCPUTime := rusage.Utime.Nano() + rusage.Stime.Nano()
-	currentSysTime := now.UnixNano()
+	return percent
+}
 
-	cpuDelta := float64(currentCPUTime - lastCPUTime)
-	sysDelta := float64(currentSysTime - lastSysTime)
+// GetSystemCPUPercent returns the system-wide CPU usage percentage
+func GetSystemCPUPercent() float64 {
+	now := time.Now()
+
+	// First call, initialize
+	if lastCheckTime.IsZero() {
+		lastCPUTimes, _ = cpu.Times(false)
+		lastCheckTime = now
+		return 0.0
+	}
+
+	// Get current CPU times
+	currentCPUTimes, err := cpu.Times(false)
+	if err != nil || len(currentCPUTimes) == 0 || len(lastCPUTimes) == 0 {
+		return 0.0
+	}
+
+	// Calculate CPU usage
+	last := lastCPUTimes[0]
+	current := currentCPUTimes[0]
+
+	totalDelta := current.Total() - last.Total()
+	idleDelta := current.Idle - last.Idle
 
 	percent := 0.0
-	if sysDelta > 0 {
-		percent = (cpuDelta / sysDelta) * 100.0 * float64(runtime.NumCPU())
+	if totalDelta > 0 {
+		percent = (totalDelta - idleDelta) / totalDelta * 100.0
 	}
 
-	lastCPUTime = currentCPUTime
-	lastSysTime = currentSysTime
+	// Update last values
+	lastCPUTimes = currentCPUTimes
 	lastCheckTime = now
-
-	// 限制在合理范围内
-	if percent > 100.0*float64(runtime.NumCPU()) {
-		percent = 100.0 * float64(runtime.NumCPU())
-	}
-	if percent < 0 {
-		percent = 0
-	}
 
 	return percent
 }
 
 // GetSystemMemory returns system memory information in MB
 func GetSystemMemory() (used, total uint64) {
-	if runtime.GOOS == "linux" {
-		return getLinuxMemory()
-	} else if runtime.GOOS == "darwin" {
-		return getDarwinMemory()
-	}
-	return 0, 0
-}
-
-// getLinuxMemory reads memory info from /proc/meminfo on Linux
-func getLinuxMemory() (used, total uint64) {
-	file, err := os.Open("/proc/meminfo")
+	v, err := mem.VirtualMemory()
 	if err != nil {
 		return 0, 0
 	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	var memTotal, memFree, memAvailable uint64
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		fields := strings.Fields(line)
-		if len(fields) < 2 {
-			continue
-		}
-
-		value, err := strconv.ParseUint(fields[1], 10, 64)
-		if err != nil {
-			continue
-		}
-
-		switch fields[0] {
-		case "MemTotal:":
-			memTotal = value / 1024 // Convert KB to MB
-		case "MemFree:":
-			memFree = value / 1024
-		case "MemAvailable:":
-			memAvailable = value / 1024
-		}
-	}
-
-	if memAvailable > 0 {
-		used = memTotal - memAvailable
-	} else {
-		used = memTotal - memFree
-	}
-
-	return used, memTotal
+	// Convert bytes to MB
+	return v.Used / 1024 / 1024, v.Total / 1024 / 1024
 }
 
-// getDarwinMemory gets memory info on macOS using sysctl-like approach
-func getDarwinMemory() (used, total uint64) {
-	// 在 macOS 上，我们使用 syscall 获取页面大小和物理内存
-	// 但由于跨平台限制，这里简化实现
-	// 可以通过执行 sysctl 命令获取更精确的值
+// GetProcessMemory returns the memory usage of current process in MB
+func GetProcessMemory() uint64 {
+	proc, err := process.NewProcess(pid)
+	if err != nil {
+		return 0
+	}
 
-	// 简单实现：返回0表示不可用，或者使用估算值
-	// 生产环境建议使用 github.com/shirou/gopsutil 等第三方库
-	return 0, 0
+	memInfo, err := proc.MemoryInfo()
+	if err != nil {
+		return 0
+	}
+
+	// Convert bytes to MB (RSS - Resident Set Size)
+	return memInfo.RSS / 1024 / 1024
 }
