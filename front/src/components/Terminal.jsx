@@ -17,6 +17,18 @@ const TerminalInstance = ({ isActive, onResize, onTerminalReady, theme, onDirect
   const homeDirRef = useRef(''); // Home directory path
   const usernameRef = useRef('user');
 
+  // Convert Git Bash Unix-style paths to Windows paths
+  const convertBashPathToWindows = (path) => {
+    // Check if it's a Git Bash style path like /c/... or /d/...
+    const match = path.match(/^\/([a-zA-Z])\/(.*)/);
+    if (match) {
+      const driveLetter = match[1].toUpperCase();
+      const remainingPath = match[2];
+      return `${driveLetter}:/${remainingPath}`;
+    }
+    return path;
+  };
+
   // Initialize terminal session info
   const initSessionInfo = async () => {
     try {
@@ -36,8 +48,10 @@ const TerminalInstance = ({ isActive, onResize, onTerminalReady, theme, onDirect
       const pwdResult = await api.executeCommand('pwd');
       if (pwdResult.stdout) {
         const dir = pwdResult.stdout.trim();
-        actualDirRef.current = dir;
-        const shortDir = dir.replace(homeDirRef.current, '~');
+        // Convert Git Bash paths to Windows paths (e.g., /d/fire -> D:/fire)
+        const nativeDir = convertBashPathToWindows(dir);
+        actualDirRef.current = nativeDir;
+        const shortDir = nativeDir.replace(homeDirRef.current, '~');
         currentDirRef.current = shortDir;
       }
     } catch (err) {
@@ -124,8 +138,9 @@ const TerminalInstance = ({ isActive, onResize, onTerminalReady, theme, onDirect
           const result = await api.executeCommand(`cd "${initialDirectory}" && pwd`);
           if (result.stdout) {
             const dir = result.stdout.trim();
-            actualDirRef.current = dir;
-            const shortDir = dir.replace(homeDirRef.current, '~');
+            const nativeDir = convertBashPathToWindows(dir);
+            actualDirRef.current = nativeDir;
+            const shortDir = nativeDir.replace(homeDirRef.current, '~');
             currentDirRef.current = shortDir;
           }
         } catch (err) {
@@ -134,8 +149,12 @@ const TerminalInstance = ({ isActive, onResize, onTerminalReady, theme, onDirect
       }
 
       // Notify parent about initial directory
-      if (onDirectoryChange && actualDirRef.current) {
-        onDirectoryChange(actualDirRef.current);
+
+      if (onDirectoryChange) {
+        const dirToReport = initialDirectory || actualDirRef.current;
+        if (dirToReport) {
+          onDirectoryChange(dirToReport);
+        }
       }
 
       // Welcome message
@@ -281,14 +300,16 @@ const TerminalInstance = ({ isActive, onResize, onTerminalReady, theme, onDirect
 
         if (result.exit_code === 0 && result.stdout) {
           const dir = result.stdout.trim();
-          actualDirRef.current = dir;
+          // Convert Git Bash paths to Windows paths (e.g., /d/fire -> D:/fire)
+          const nativeDir = convertBashPathToWindows(dir);
+          actualDirRef.current = nativeDir;
           // Display shortened path with ~
-          const shortDir = dir.replace(homeDirRef.current, '~');
+          const shortDir = nativeDir.replace(homeDirRef.current, '~');
           currentDirRef.current = shortDir;
 
-          // Notify parent about directory change
+          // Notify parent about directory change with native path
           if (onDirectoryChange) {
-            onDirectoryChange(dir);
+            onDirectoryChange(nativeDir);
           }
         } else if (result.stderr) {
           term.write('\x1b[31m' + result.stderr.replace(/\n/g, '\r\n') + '\x1b[0m');
