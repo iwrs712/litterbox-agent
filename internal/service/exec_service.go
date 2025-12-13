@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -21,6 +22,12 @@ func (s *ExecService) ExecuteCommand(req *model.CommandRequest) *model.CommandRe
 	// 设置工作目录
 	if req.Cwd != "" {
 		cmd.Dir = req.Cwd
+	} else {
+		// 如果没有指定工作目录，检查 DEFAULT_DIR 环境变量
+		defaultDir := os.Getenv("DEFAULT_DIR")
+		if defaultDir != "" {
+			cmd.Dir = defaultDir
+		}
 	}
 
 	var stdout, stderr bytes.Buffer

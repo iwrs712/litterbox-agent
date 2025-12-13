@@ -52,6 +52,7 @@ http://localhost:22531?token=xxxxxx&dir=/home&file=/home/config.json
 |------|------|--------|
 | `PORT` | 服务器端口 | `22531` |
 | `AGENT_TOKEN` | 访问 Token（不设置则无需认证） | 无 |
+| `DEFAULT_DIR` | 默认打开的目录 | 当前工作目录 |
 
 ## API 接口
 
@@ -92,6 +93,34 @@ GET /api/download?path=/path/to/file
 POST /api/exec
 {"command": "ls -la", "cwd": "/optional/working/directory"}
 ```
+
+### 环境变量管理
+
+支持动态管理环境变量，包括 `AGENT_TOKEN`、`DEFAULT_DIR` 等。
+
+```bash
+# 列出所有环境变量
+GET /api/env
+
+# 获取指定环境变量
+GET /api/env?key=AGENT_TOKEN
+
+# 设置环境变量
+POST /api/env
+{"key": "AGENT_TOKEN", "value": "new-token"}
+
+# 设置默认目录
+POST /api/env
+{"key": "DEFAULT_DIR", "value": "/home/projects"}
+
+# 删除环境变量
+DELETE /api/env?key=AGENT_TOKEN
+```
+
+**注意**：
+- 修改 `AGENT_TOKEN` 后会立即生效，后续请求需要使用新的 token
+- 修改 `DEFAULT_DIR` 后，新打开的页面会使用新的默认目录
+- 修改 `PORT` 需要重启服务才能生效
 
 ### Agent文件操作
 

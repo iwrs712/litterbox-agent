@@ -30,15 +30,22 @@ func (h *IDEHandler) HandleFileTree(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get root path from query parameter, default to current working directory
+	// Get root path from query parameter
 	rootPath := r.URL.Query().Get("path")
 	if rootPath == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, "Failed to get current directory: "+err.Error())
-			return
+		// First check DEFAULT_DIR environment variable
+		defaultDir := os.Getenv("DEFAULT_DIR")
+		if defaultDir != "" {
+			rootPath = defaultDir
+		} else {
+			// Fall back to current working directory
+			cwd, err := os.Getwd()
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, "Failed to get current directory: "+err.Error())
+				return
+			}
+			rootPath = cwd
 		}
-		rootPath = cwd
 	}
 
 	tree, err := h.ideService.GetFileTree(rootPath)

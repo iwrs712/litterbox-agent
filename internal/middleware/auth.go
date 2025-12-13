@@ -38,6 +38,11 @@ func (m *AuthManager) IsAuthEnabled() bool {
 	return os.Getenv(TokenEnvVar) != ""
 }
 
+// ReloadToken 重新加载token（由于每次都从环境变量读取，这个方法主要用于显式通知）
+func (m *AuthManager) ReloadToken() {
+	// 这个方法存在是为了API的明确性
+}
+
 // Protect 保护需要认证的接口
 func (m *AuthManager) Protect(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

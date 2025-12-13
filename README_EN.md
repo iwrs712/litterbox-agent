@@ -53,6 +53,7 @@ http://localhost:22531?token=xxxxxx&dir=/home&file=/home/config.json
 |----------|-------------|---------|
 | `PORT` | Server port | `22531` |
 | `AGENT_TOKEN` | Access token (no auth if not set) | None |
+| `DEFAULT_DIR` | Default directory to open | Current working directory |
 
 ## API Reference
 
@@ -93,6 +94,34 @@ GET /api/download?path=/path/to/file
 POST /api/exec
 {"command": "ls -la", "cwd": "/optional/working/directory"}
 ```
+
+### Environment Variable Management
+
+Dynamically manage environment variables, including `AGENT_TOKEN`, `DEFAULT_DIR`, etc.
+
+```bash
+# List all environment variables
+GET /api/env
+
+# Get specific environment variable
+GET /api/env?key=AGENT_TOKEN
+
+# Set environment variable
+POST /api/env
+{"key": "AGENT_TOKEN", "value": "new-token"}
+
+# Set default directory
+POST /api/env
+{"key": "DEFAULT_DIR", "value": "/home/projects"}
+
+# Delete environment variable
+DELETE /api/env?key=AGENT_TOKEN
+```
+
+**Notes**:
+- Changes to `AGENT_TOKEN` take effect immediately; subsequent requests must use the new token
+- Changes to `DEFAULT_DIR` apply to newly opened pages
+- Changes to `PORT` require service restart
 
 ### Agent File Operations
 

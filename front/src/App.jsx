@@ -72,7 +72,20 @@ function App() {
         setAuthenticated(true);
 
         // Check if there's a directory parameter to set
-        const dirToSet = getDirectoryFromURL();
+        let dirToSet = getDirectoryFromURL();
+
+        // If no URL parameter, get default directory from config
+        if (!dirToSet) {
+          try {
+            const config = await api.getConfig();
+            if (config.default_directory) {
+              dirToSet = config.default_directory;
+            }
+          } catch (err) {
+            console.error('Failed to get config:', err);
+          }
+        }
+
         console.log('URL dir parameter:', dirToSet);
         if (dirToSet) {
           console.log('Setting currentDirectory to:', dirToSet);
@@ -117,6 +130,27 @@ function App() {
     console.log('Current directory before:', currentDirectory);
     setCurrentDirectory(directory);
   };
+
+  // Function to refresh config and update directory
+  const refreshConfig = async () => {
+    try {
+      const config = await api.getConfig();
+      if (config.default_directory) {
+        console.log('Refreshed config, new directory:', config.default_directory);
+        setCurrentDirectory(config.default_directory);
+      }
+    } catch (err) {
+      console.error('Failed to refresh config:', err);
+    }
+  };
+
+  // Expose refreshConfig globally so it can be called from anywhere
+  useEffect(() => {
+    window.refreshConfig = refreshConfig;
+    return () => {
+      delete window.refreshConfig;
+    };
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';

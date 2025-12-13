@@ -19,6 +19,8 @@ func main() {
 	execService := service.NewExecService()
 	metricsService := service.NewMetricsService()
 	ideService := service.NewIDEService()
+	configService := service.NewConfigService()
+	envService := service.NewEnvService()
 
 	// Initialize handlers
 	uploadHandler := handler.NewUploadHandler(fileService, metricsService)
@@ -27,6 +29,8 @@ func main() {
 	metricsHandler := handler.NewMetricsHandler(metricsService)
 	fileHandler := handler.NewFileHandler(fileService, metricsService)
 	ideHandler := handler.NewIDEHandler(ideService)
+	configHandler := handler.NewConfigHandler(configService)
+	envHandler := handler.NewEnvHandler(envService, authManager)
 
 	// Register routes
 	// System endpoints (no authentication required)
@@ -34,6 +38,8 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok"}`))
 	})
+	http.Handle("/api/config", authManager.Protect(http.HandlerFunc(configHandler.Handle)))
+	http.Handle("/api/env", authManager.Protect(http.HandlerFunc(envHandler.Handle)))
 
 	// Common API routes (protected) - Used by both Agent and IDE
 	http.Handle("/api/upload", authManager.Protect(http.HandlerFunc(uploadHandler.Handle)))
@@ -68,6 +74,10 @@ func main() {
 	log.Printf("Available endpoints:")
 	log.Printf("    GET    /health            - Health check")
 	log.Printf("    GET    /                  - Web IDE interface")
+	log.Printf("    GET    /api/config        - Get configuration")
+	log.Printf("    GET    /api/env           - List environment variables")
+	log.Printf("    POST   /api/env           - Set environment variable")
+	log.Printf("    DELETE /api/env           - Unset environment variable")
 	log.Printf("    POST   /api/upload        - Upload files")
 	log.Printf("    GET    /api/download      - Download files")
 	log.Printf("    POST   /api/exec          - Execute commands")

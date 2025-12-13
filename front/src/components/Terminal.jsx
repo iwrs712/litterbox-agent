@@ -148,12 +148,12 @@ const TerminalInstance = ({ isActive, onResize, onTerminalReady, theme, onDirect
         }
       }
 
-      // Notify parent about initial directory
-
-      if (onDirectoryChange) {
-        const dirToReport = initialDirectory || actualDirRef.current;
-        if (dirToReport) {
-          onDirectoryChange(dirToReport);
+      // Only notify parent about directory if initialDirectory was not provided
+      // If initialDirectory was provided, the parent already knows the directory
+      // and we shouldn't override it with pwd result
+      if (onDirectoryChange && !initialDirectory) {
+        if (actualDirRef.current) {
+          onDirectoryChange(actualDirRef.current);
         }
       }
 

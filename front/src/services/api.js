@@ -61,6 +61,13 @@ class ApiService {
     }
   }
 
+  // Get Configuration
+  async getConfig() {
+    return this.request('/api/config', {
+      method: 'GET',
+    });
+  }
+
   // File Tree
   async getFileTree(path = '') {
     const query = path ? `?path=${encodeURIComponent(path)}` : '';
@@ -150,6 +157,36 @@ class ApiService {
   async getMetrics() {
     return this.request('/metrics', {
       method: 'GET',
+    });
+  }
+
+  // Environment Variables
+  async getEnv(key) {
+    const query = key ? `?key=${encodeURIComponent(key)}` : '';
+    return this.request(`/api/env${query}`, {
+      method: 'GET',
+    });
+  }
+
+  async setEnv(key, value) {
+    const response = await this.request('/api/env', {
+      method: 'POST',
+      body: JSON.stringify({ key, value }),
+    });
+
+    // If DEFAULT_DIR was updated and requires refresh, trigger it
+    if (response.requires_refresh && window.refreshConfig) {
+      console.log('DEFAULT_DIR updated, refreshing config...');
+      setTimeout(() => window.refreshConfig(), 100);
+    }
+
+    return response;
+  }
+
+  async deleteEnv(key) {
+    const query = `?key=${encodeURIComponent(key)}`;
+    return this.request(`/api/env${query}`, {
+      method: 'DELETE',
     });
   }
 }
