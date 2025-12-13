@@ -52,8 +52,13 @@ func (m *AuthManager) Protect(next http.Handler) http.Handler {
 			return
 		}
 
-		// 验证 token
+		// 验证 token - 支持 header 和 query parameter
 		clientToken := r.Header.Get("X-Token")
+		if clientToken == "" {
+			// For WebSocket connections, check query parameter
+			clientToken = r.URL.Query().Get("token")
+		}
+
 		if !m.Verify(clientToken) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)

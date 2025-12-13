@@ -31,8 +31,11 @@ func main() {
 	ideHandler := handler.NewIDEHandler(ideService)
 	configHandler := handler.NewConfigHandler(configService)
 	envHandler := handler.NewEnvHandler(envService, authManager)
+	terminalWSHandler := handler.NewTerminalWSHandler()
 
 	// Register routes
+	// WebSocket endpoint for interactive terminal
+	http.Handle("/ws/terminal", authManager.Protect(http.HandlerFunc(terminalWSHandler.Handle)))
 	// System endpoints (no authentication required)
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -74,6 +77,7 @@ func main() {
 	log.Printf("Available endpoints:")
 	log.Printf("    GET    /health            - Health check")
 	log.Printf("    GET    /                  - Web IDE interface")
+	log.Printf("    WS     /ws/terminal       - Interactive terminal (WebSocket)")
 	log.Printf("    GET    /api/config        - Get configuration")
 	log.Printf("    GET    /api/env           - List environment variables")
 	log.Printf("    POST   /api/env           - Set environment variable")

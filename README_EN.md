@@ -57,7 +57,12 @@ http://localhost:22531?token=xxxxxx&dir=/home&file=/home/config.json
 
 ## API Reference
 
-> Include `X-Token` in request headers if authentication is enabled
+> Include `X-Token` in request headers if authentication is enabled (for WebSocket, pass as URL query parameter `?token=xxx`)
+
+### WebSocket Terminal Endpoint
+```
+WS /ws/terminal?rows=24&cols=80&token=xxxxx
+```
 
 ### File Operations
 

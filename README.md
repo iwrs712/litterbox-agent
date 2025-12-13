@@ -9,7 +9,7 @@
 
 **中文 | [EN](README_EN.md)**
 
-轻量级沙箱工具，提供 Web IDE 界面和 API。在浏览器中编辑代码、执行命令、管理文件，同时为 AI Agent 提供完整的自动化接口。专为远程开发和 AI 协作设计。
+轻量级沙箱工具，提供 Web IDE 、交互式终端和 API。在浏览器中编辑代码、执行命令、管理文件，同时为 AI Agent 提供完整的自动化接口。专为远程开发和 AI 协作设计。
 
 ![Litterbox Agent](./docs/imgs/screenshot.png)
 ## 快速开始
@@ -56,7 +56,14 @@ http://localhost:22531?token=xxxxxx&dir=/home&file=/home/config.json
 
 ## API 接口
 
-> 如果启用了Token，则需要在请求头中携带 `X-Token`
+> 如果启用了Token，则需要在请求头中携带 `X-Token`（WebSocket 通过 URL 查询参数 `?token=xxx` 传递）
+
+
+### 终端 WebSocket
+
+```
+WS /ws/terminal?rows=24&cols=80&token=xxxxx
+```
 
 ### 文件操作
 
