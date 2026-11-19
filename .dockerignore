@@ -1,0 +1,8 @@
+.git
+.gitignore
+bin
+dist
+coverage.out
+**/*_test.go
+.env
+.DS_Store

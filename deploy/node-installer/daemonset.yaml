@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: envd-node-installer
+  namespace: litterbox
+  labels:
+    app.kubernetes.io/name: envd-node-installer
+    app.kubernetes.io/part-of: litterbox
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: envd-node-installer
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: envd-node-installer
+        app.kubernetes.io/part-of: litterbox
+    spec:
+      nodeSelector:
+        katacontainers.io/kata-runtime: "true"
+        kubernetes.io/arch: amd64
+      initContainers:
+        - name: installer
+          image: envd-node-installer:0.1.5-amd64
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp /payload/envd /host-bin/.envd.new
+              chmod 0755 /host-bin/.envd.new
+              mv -f /host-bin/.envd.new /host-bin/envd
+              test -x /host-bin/envd
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: envd-host-bin
+              mountPath: /host-bin
+      containers:
+        - name: ready
+          image: envd-node-installer:0.1.5-amd64
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - test -x /host-bin/envd && exec sleep infinity
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          resources:
+            requests:
+              cpu: 1m
+              memory: 2Mi
+            limits:
+              cpu: 20m
+              memory: 16Mi
+          volumeMounts:
+            - name: envd-host-bin
+              mountPath: /host-bin
+              readOnly: true
+      volumes:
+        - name: envd-host-bin
+          hostPath:
+            path: /opt/litterbox/bin
+            type: DirectoryOrCreate
